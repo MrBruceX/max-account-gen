@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://cdn.discordapp.com; connect-src 'self' https://japi.rest; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>MAX SHOP — Guides</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#060608;--panel:#101014;--border:rgba(255,255,255,.12);--muted:rgba(255,255,255,.48);--text:#fff}
+body{min-height:100vh;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif}
+nav{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--border);background:#09090b;position:sticky;top:0}
+.brand{font-size:1rem;font-weight:900;letter-spacing:.03em}
+.nav-link{color:#fff;text-decoration:none;font-size:.78rem;border:1px solid var(--border);border-radius:8px;padding:9px 13px}
+main{max-width:1040px;margin:38px auto;padding:0 18px}
+h1{font-size:1.5rem;font-weight:900;margin-bottom:7px}
+.subtitle{color:var(--muted);font-size:.82rem;margin-bottom:24px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card{border:1px solid var(--border);border-radius:14px;background:var(--panel);padding:18px;min-width:0}
+.card h2{font-size:.9rem;margin-bottom:7px}
+.card p{font-size:.75rem;color:var(--muted);line-height:1.5;margin-bottom:14px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button{cursor:pointer;border:1px solid var(--border);border-radius:8px;padding:9px 13px;color:#fff;background:#1a1a20;font:700 .72rem Inter,Arial}
+button:hover{background:#292930}
+button:disabled{opacity:.4;cursor:not-allowed}
+.status{font-size:.68rem;color:var(--muted);margin-top:10px}
+.viewer{display:none;margin-top:22px;border:1px solid var(--border);border-radius:14px;background:var(--panel);padding:16px}
+.viewer.open{display:block}
+.viewer-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.viewer-title{font-size:.85rem;font-weight:800}
+.stage{display:grid;place-items:center;min-height:180px;background:#050506;border:1px dashed var(--border);border-radius:10px;overflow:hidden}
+.stage video,.stage img{display:block;max-width:100%;max-height:70vh;object-fit:contain}
+.empty{padding:24px;text-align:center;color:var(--muted);font-size:.78rem;line-height:1.7}
+@media(max-width:650px){.grid{grid-template-columns:1fr}main{margin:24px auto}nav{padding:0 14px}}
+</style>
+</head>
+<body>
+<nav><div class="brand">MAX SHOP <span style="font-size:.58rem;color:#777">GUIDES</span></div><a class="nav-link" href="generator.html">Back to Generator</a></nav>
+<main>
+  <h1>GUIDE CENTER</h1>
+  <div class="subtitle">Choose a tutorial. Videos and pictures are uploaded by the administrator.</div>
+  <div class="grid" id="guide-grid">
+    <article class="card" data-category="steam"><h2>STEAM ACCOUNT AND CODES</h2><p>Steam account details and codes.</p><div class="actions"><button data-kind="video">▶ VIDEO</button><button data-kind="picture">▧ PICTURE</button></div><div class="status"></div></article>
+    <article class="card" data-category="rockstar"><h2>ROCKSTAR ACCOUNT AND CODES</h2><p>Rockstar account details and codes.</p><div class="actions"><button data-kind="video">▶ VIDEO</button><button data-kind="picture">▧ PICTURE</button></div><div class="status"></div></article>
+    <article class="card" data-category="discord"><h2>DISCORD GUIDE</h2><p>Discord setup and account guide.</p><div class="actions"><button data-kind="video">▶ VIDEO</button><button data-kind="picture">▧ PICTURE</button></div><div class="status"></div></article>
+    <article class="card" data-category="generator"><h2>GENERATOR GUIDE</h2><p>How to use the MAX SHOP generator.</p><div class="actions"><button data-kind="video">▶ VIDEO</button><button data-kind="picture">▧ PICTURE</button></div><div class="status"></div></article>
+  </div>
+  <section class="viewer" id="viewer" aria-live="polite">
+    <div class="viewer-head"><div class="viewer-title" id="viewer-title">Guide</div><button id="viewer-close" type="button">Close</button></div>
+    <div class="stage" id="viewer-stage"></div>
+  </section>
+</main>
+<script>
+(() => {
+  const DB_NAME="MAX_SHOP_GUIDE_MEDIA", STORE="media";
+  const titles={steam:"STEAM ACCOUNT AND CODES",rockstar:"ROCKSTAR ACCOUNT AND CODES",discord:"DISCORD GUIDE",generator:"GENERATOR GUIDE"};
+  let currentUrl=null;
+  function openDB(){return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,1);
+    req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(STORE))req.result.createObjectStore(STORE,{keyPath:"id"});};
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error||new Error("Could not open guide storage."));
+  });}
+  async function getMedia(id){
+    const db=await openDB();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(STORE,"readonly"),req=tx.objectStore(STORE).get(id);
+      req.onsuccess=()=>{const value=req.result||null;db.close();resolve(value);};
+      req.onerror=()=>{const e=req.error;db.close();reject(e||new Error("Could not load guide media."));};
+    });
+  }
+  function clearViewer(){
+    const video=document.querySelector("#viewer-stage video");
+    if(video)video.pause();
+    if(currentUrl){URL.revokeObjectURL(currentUrl);currentUrl=null;}
+    document.getElementById("viewer-stage").replaceChildren();
+    document.getElementById("viewer").classList.remove("open");
+  }
+  async function showMedia(category,kind,statusEl){
+    clearViewer();
+    const viewer=document.getElementById("viewer"),stage=document.getElementById("viewer-stage");
+    document.getElementById("viewer-title").textContent=titles[category]+" — "+kind.toUpperCase();
+    viewer.classList.add("open");
+    stage.innerHTML='<div class="empty">Loading guide media…</div>';
+    try{
+      const record=await getMedia(category+":"+kind);
+      if(!record||!record.blob){
+        stage.innerHTML='<div class="empty">No '+kind+' has been uploaded for this guide yet.<br>Please check back later.</div>';
+        return;
+      }
+      currentUrl=URL.createObjectURL(record.blob);
+      stage.replaceChildren();
+      if(kind==="video"){
+        const video=document.createElement("video");video.controls=true;video.playsInline=true;video.preload="metadata";video.src=currentUrl;
+        stage.append(video);
+      }else{
+        const img=document.createElement("img");img.alt=titles[category]+" picture guide";img.src=currentUrl;stage.append(img);
+      }
+      viewer.scrollIntoView({behavior:"smooth",block:"start"});
+    }catch(e){stage.innerHTML='<div class="empty">Could not load media: '+String(e.message||e)+'</div>';}
+  }
+  document.querySelectorAll(".card[data-category]").forEach(card=>{
+    const category=card.dataset.category,status=card.querySelector(".status");
+    card.querySelectorAll("button[data-kind]").forEach(button=>{
+      button.addEventListener("click",()=>showMedia(category,button.dataset.kind,status));
+    });
+  });
+  document.getElementById("viewer-close").addEventListener("click",clearViewer);
+})();
+</script>
+</body>
+</html>
